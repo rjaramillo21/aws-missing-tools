@@ -69,6 +69,11 @@ create_EBS_Snapshot_Tags() {
   if $user_tags; then
     snapshot_tags="$snapshot_tags Key=Volume,Value=${ebs_selected} Key=Created,Value=$current_date"
   fi
+  #if $admios_tag is true, then append Name=canvas_$current_day
+  if $admios_tag; then
+    current_day=$(date -u +%m%d%Y)
+    snapshot_tags="$snapshot_tags Key=Name,Value=canvas_$current_day"
+  fi
   #if $snapshot_tags is not zero length then set the tag on the snapshot using aws ec2 create-tags
   if [[ -n $snapshot_tags ]]; then
     echo "Tagging Snapshot $ec2_snapshot_resource_id with the following Tags: $snapshot_tags"
@@ -144,9 +149,11 @@ hostname_tag_create=false
 user_tags=false
 #sets the Purge Snapshot feature to false - if purge_snapshots=true then snapshots will be purged
 purge_snapshots=false
+#sets the admios_tag feature to false - admios_tag creates tag Name=canvas_mmddyyyy on snapshots  
+admios_tag=false
 #handles options processing
 
-while getopts :s:c:r:v:t:k:pnhu opt; do
+while getopts :s:c:r:v:t:k:pnhua opt; do
   case $opt in
     s) selection_method="$OPTARG" ;;
     c) cron_primer="$OPTARG" ;;
@@ -158,6 +165,7 @@ while getopts :s:c:r:v:t:k:pnhu opt; do
     h) hostname_tag_create=true ;;
     p) purge_snapshots=true ;;
     u) user_tags=true ;;
+    a) admios_tag=true ;;
     *) echo "Error with Options Input. Cause of failure is most likely that an unsupported parameter was passed or a parameter was passed without a corresponding option." 1>&2 ; exit 64 ;;
   esac
 done
